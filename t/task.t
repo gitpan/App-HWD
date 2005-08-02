@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 31;
+use Test::More tests => 37;
 
 BEGIN {
     use_ok( 'App::HWD::Task' );
@@ -19,6 +19,7 @@ SIMPLE: {
     is( $task->level, 1 );
     is( $task->estimate, 0 );
     is( $task->id, '' );
+    is( $task->summary, 'Create TW::DB::QuoteHead (0/0)', 'Summary');
 }
 
 WITH_ID: {
@@ -30,6 +31,7 @@ WITH_ID: {
     is( $task->level, 2 );
     is( $task->estimate, 0 );
     is( $task->id, 198 );
+    is( $task->summary, '198 - API Pod Docs (0/0)', 'Summary');
 }
 
 WITH_ESTIMATE: {
@@ -41,6 +43,7 @@ WITH_ESTIMATE: {
     is( $task->level, 3 );
     is( $task->estimate, 4 );
     is( $task->id, '' );
+    is( $task->summary, 'API Pod Docs (4/0)', 'Summary');
 }
 
 WITH_ID_AND_ESTIMATE: {
@@ -52,6 +55,7 @@ WITH_ID_AND_ESTIMATE: {
     is( $task->level, 4 );
     is( $task->estimate, 3 );
     is( $task->id, 142 );
+    is( $task->summary, '142 - Retrofitting widgets (3/0)', 'Summary');
 }
 
 WITH_ESTIMATE_AND_ID: {
@@ -63,6 +67,7 @@ WITH_ESTIMATE_AND_ID: {
     is( $task->level, 1 );
     is( $task->estimate, 9 );
     is( $task->id, 2112 );
+    is( $task->summary, '2112 - Flargling dangows (9/0)', 'Summary');
 }
 
 WITH_PARENS: {
@@ -73,4 +78,5 @@ WITH_PARENS: {
     is( $task->level, 1 );
     is( $task->estimate, 0 );
     is( $task->id, 43 );
+    is( $task->summary, '43 - Voodoo Chile (Slight Return) (0/0)', 'Summary');
 }

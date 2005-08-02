@@ -9,11 +9,11 @@ App::HWD - The great new App::HWD!
 
 =head1 VERSION
 
-Version 0.01
+Version 0.04
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.04';
 
 =head1 SYNOPSIS
 
@@ -60,6 +60,10 @@ I will be notified, and then you'll automatically be notified of progress on
 your bug as I make changes.
 
 =head1 ACKNOWLEDGEMENTS
+
+Thanks to
+Neil Watkiss
+and Luke Closs for features and patches.
 
 =head1 COPYRIGHT & LICENSE
 

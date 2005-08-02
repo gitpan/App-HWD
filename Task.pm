@@ -174,6 +174,20 @@ sub completed {
     return $completed;
 }
 
+=head2 summary
+
+Returns a simple one line description of the Work.
+
+=cut
+
+sub summary {
+    my $self = shift;
+    my $sum;
+    $sum = $self->id . " - " if $self->id;
+    $sum .= sprintf( "%s (%s/%s)", $self->name, $self->estimate, $self->hours_worked );
+    return $sum;
+}
+
 =head1 AUTHOR
 
 Andy Lester, C<< <andy at petdance.com> >>

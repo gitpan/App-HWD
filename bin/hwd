@@ -6,24 +6,55 @@ use Getopt::Long;
 use Pod::Usage;
 use App::HWD::Task;
 use App::HWD::Work;
+use List::Util qw( max );
 
 our $detail_level;
+our $started;
+
+our $show_nextid;
 
 Getopt::Long::Configure( "no_ignore_case" );
 Getopt::Long::Configure( "bundling" );
 GetOptions(
     'detail=n'      => \$detail_level,
-    'h|help|?'      => sub {pod2usage({-verbose => 1}); exit},
-    'H|man'         => sub {pod2usage({-verbose => 2}); exit},
+    nextid          => \$show_nextid,
+    'started:s'     => \$started,
+    'h|help|?'      => sub { pod2usage({-verbose => 1}); exit; },
+    'H|man'         => sub { pod2usage({-verbose => 2}); exit; },
     'V|version'     => sub { print_version(); exit; },
 ) or exit 1;
 
 MAIN: {
     my ($tasks,$works,$tasks_by_id) = get_tasks_and_work();
 
+    if ( $show_nextid ) {
+        my $max = max( keys %$tasks_by_id );
+        $max = $max ? $max+1 : 101;
+        print "Next task ID: $max\n";
+        exit;
+    }
+
     for my $work ( @$works ) {
         my $task = $tasks_by_id->{ $work->task } or die "No task ID ", $work->task, "\n";
         $task->add_work( $work );
+    }
+
+    if (defined $started) {
+        my %started;
+        foreach my $w (@$works) {
+            next if $started and $started ne $w->who;
+            my $t = $tasks_by_id->{$w->task};
+            next if $t->completed();
+            $started{$w->who}{$t->id}++;
+        }
+        foreach my $w (sort keys %started) {
+            print "$w is working on...\n";
+            foreach my $t (sort keys %{$started{$w}}) {
+                print "  " . $tasks_by_id->{$t}->summary . "\n";
+            }
+            print "\n";
+        }
+        exit;
     }
 
     my $total_estimated = 0;
@@ -115,42 +146,38 @@ hwd -- The How We Doin'? project tracking tool
 
 =head1 SYNOPSIS
 
-hwd [options]
+hwd [options] schedule-file(s)
 
 Options:
+        --nextid    Display the next highest task ID
+        --started   Displays tasks that have been started
+        --started=person
+                    Displays tasks started by person
 
     -h, --help      Display this help
     -H, --man       Longer manpage for prove
     -V, --version   Display version info
 
-=head1 OVERVIEW
-
-F<prove> is a command-line interface to the test-running functionality
-of C<Test::Harness>.  With no arguments, it will run all tests in the
-current directory.
-
-Shell metacharacters may be used with command lines options and will be exanded 
-via C<glob>.
-
 =head1 COMMAND LINE OPTIONS
+
+=head2 --started[=who]
+
+Shows what tasks have been started by the person specified, or by everyone
+if no one one is specified.
+
+=head2 --nextid
+
+Shows the next ID available.
 
 =head2 -V, --version
 
 Display version info.
 
-=head1 TODO
-
-=head2 --validate
-
-=head2 --nextid
-
-=head2 --detail
-
 =head1 BUGS
 
 Please use the CPAN bug ticketing system at L<http://rt.cpan.org/>.
 You can also mail bugs, fixes and enhancements to 
-C<< <bug-test-harness@rt.cpan.org> >>.
+C<< <bug-app-hwd at rt.cpan.org> >>.
 
 =head1 AUTHORS
 
