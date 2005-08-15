@@ -1,5 +1,12 @@
 Revision history for App-HWD
 
+0.06    Sun Aug 14 21:52:55 CDT 2005
+        [ENHANCEMENTS]
+        * Added a vim syntax file in etc/hwd.vim.
+        * Added --burndown and starting on the burndown graphic.
+          Thanks to Neil & Luke again.
+        * Added a $task->date_added()
+
 0.04    Tue Aug  2 15:47:23 CDT 2005
         [ENHANCEMENTS]
         * Added --started feature.  Thanks to Neil Watkiss and Luke

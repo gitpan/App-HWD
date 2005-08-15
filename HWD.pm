@@ -9,47 +9,30 @@ App::HWD - The great new App::HWD!
 
 =head1 VERSION
 
-Version 0.04
+Version 0.06
 
 =cut
 
-our $VERSION = '0.04';
+our $VERSION = '0.06';
 
 =head1 SYNOPSIS
 
-Quick summary of what the module does.
+This module is nothing more than a place-holder for the version info and the TODO list.
 
-Perhaps a little code snippet.
+=head1 TODO
 
-    use App::HWD;
+=over 4
 
-    my $foo = App::HWD->new();
-    ...
+=item * Weekly burndown
 
-=head1 EXPORT
+The C<--burndown> flag gives totals as they happen.  I want them to give
+a Monday-morning total since I like to plot weekly, not daily.
 
-A list of functions that can be exported.  You can delete this section
-if you don't export anything, such as for a purely object-oriented module.
-
-=head1 FUNCTIONS
-
-=head2 function1
-
-=cut
-
-sub function1 {
-}
-
-=head2 function2
-
-=cut
-
-sub function2 {
-}
+=back
 
 =head1 AUTHOR
 
-Andy Lester, C<< <andy@petdance.com> >>
+Andy Lester, C<< <andy at petdance.com> >>
 
 =head1 BUGS
 

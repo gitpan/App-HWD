@@ -8,7 +8,7 @@ WriteMakefile(
     VERSION_FROM        => 'HWD.pm',
     ABSTRACT_FROM       => 'HWD.pm',
     PL_FILES            => {},
-    EXE_FILES           => [ 'bin/hwd' ],
+    EXE_FILES           => [ 'bin/hwd', 'bin/hwd-burnchart' ],
     PM => {
         'HWD.pm' => '$(INST_LIBDIR)/HWD.pm',
         'Task.pm' => '$(INST_LIBDIR)/HWD/Task.pm',
@@ -18,6 +18,7 @@ WriteMakefile(
         'Test::More' => 0,
         'Getopt::Long' => 0,
         'Pod::Usage' => 0,
+        'Date::Manip' => 0,
     },
     MAN3PODS            => { }, # no need for docs on these
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },

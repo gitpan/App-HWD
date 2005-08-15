@@ -39,8 +39,9 @@ sub parse {
         my $name = $2;
         my $id;
         my $estimate;
+        my $date_added;
 
-        if ( $name =~ s/\s*\(([^)]+)\)$// ) {
+        if ( $name =~ s/\s*\(([^)]+)\)\s*$// ) {
             my $parens = $1;
             my @subfields = split /,/, $parens;
             for ( @subfields ) {
@@ -48,15 +49,17 @@ sub parse {
                 s/\s+$//;
                 /^#(\d+)$/ and $id = $1, next;
                 /^(\d+)h$/ and $estimate = $1, next;
+                /^\@(\S+)$/ and $date_added = $1, next;
                 warn "Don't understand $_";
             }
         }
 
         my $task = $class->new( {
-            level => $level,
-            name => $name,
-            id => $id,
-            estimate => $estimate,
+            level       => $level,
+            name        => $name,
+            id          => $id,
+            estimate    => $estimate,
+            date_added  => $date_added,
         } );
     }
     else {
@@ -106,12 +109,22 @@ Returns the ID of the task, or the empty string if there isn't one.
 
 Returns the estimate, or 0 if it's not set.
 
+=head2 $task->date_added()
+
+Returns the date the task was added, or empty string if it's not set.
+
+=head2 $task->work()
+
+Returns the array of App::HWD::Work applied to the task.
+
 =cut
 
-sub level { return shift->{level} }
-sub name { return shift->{name} }
-sub id { return shift->{id} || "" }
-sub estimate { return shift->{estimate} || 0 }
+sub level       { return shift->{level} }
+sub name        { return shift->{name} }
+sub id          { return shift->{id} || "" }
+sub estimate    { return shift->{estimate} || 0 }
+sub date_added  { return shift->{date_added} || '' }
+sub work { return @{shift->{work}} }
 
 =head2 $task->set( $key => $value )
 

@@ -32,7 +32,7 @@ sub parse {
     my ($who, $when, $task, $hours, $comment) = @cols;
     my $completed;
     if ( defined $comment ) {
-        if ( $comment =~ s/X\s*//i ) {
+        if ( $comment =~ s/\s*X\s*//i ) {
             $completed = 1;
         }
         $comment =~ s/^#\s*//;
