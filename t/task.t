@@ -88,13 +88,13 @@ WITH_PARENS: {
 }
 
 WITH_ID_AND_ESTIMATE_AND_DATE: {
-    my $str = '----Retrofitting widgets (#142, 3h, @9/11)';
+    my $str = '----Retrofitting widgets (#142, 3h, added 12/7)';
     my $task = App::HWD::Task->parse( $str );
     isa_ok( $task, 'App::HWD::Task' );
     is( $task->name, 'Retrofitting widgets' );
     is( $task->level, 4 );
     is( $task->estimate, 3 );
     is( $task->id, 142 );
-    is( $task->date_added, '9/11', 'Task date' );
+    is( $task->date_added, '12/7', 'Task date' );
     is( $task->summary, '142 - Retrofitting widgets (3/0)', 'Summary' );
 }

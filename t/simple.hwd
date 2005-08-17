@@ -5,8 +5,8 @@
 --FOO*
 ---Add new columns to track by type (#101, 2h)   
 ---Add new columns to record new checkout features (#102, 2h)
----Add FK constraints between FOOHEAD and FOODETAIL (#103, 2h, @2005/7/15)
----Add FK constraints between FOOHEAD and BARDETAIL (#104, 2h, @2005/7/16)
+---Add FK constraints between FOOHEAD and FOODETAIL (#103, 2h, added 2005/7/15)
+---Add FK constraints between FOOHEAD and BARDETAIL (#104, 2h, added 2005/7/16)
 
 --ORDERFORM
 ---Create migration script to modify table automatically (#105, 2h)

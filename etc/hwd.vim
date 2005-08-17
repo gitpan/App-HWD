@@ -17,7 +17,7 @@ syn match hwdWork /^[a-z]\+\>/ nextgroup=hwdWorkDate skipwhite
 
 syn match hwdSpecId "#\d\+\>" contained
 syn match hwdSpecTime "\d\+\(\.\d\+\)*h\>" contained
-syn match hwdSpecWhence "@\(\(\d\{1,2\}\)\{1,2\}/\)\?\d\{1,2\}/\d\{1,2\}\>" contained
+syn match hwdSpecWhence "added \(\(\d\{1,2\}\)\{1,2\}/\)\?\d\{1,2\}/\d\{1,2\}\>" contained
 syn cluster hwdSpec contains=hwdSpecId,hwdSpecTime,hwdSpecWhence
 syn match hwdTaskDesc ".*" contains=hwdTaskSpec contained skipwhite
 syn match hwdTaskSpec "(.\+,.\+\(,.\+\)\?)\s*$" contains=@hwdSpec contained skipwhite

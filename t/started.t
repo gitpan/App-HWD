@@ -1,18 +1,21 @@
 #!perl
 
-use Test::More tests => 5;
+use Test::More tests => 6;
 
-my $started;
-my @lines;
+SIMPLE: { # Test using the simple example
+    my $started = `$^X -Mblib bin/hwd --started < t/simple.hwd`;
+    like($started, qr#Ape is working on.+ 104 - Add .+\(2/2\)#s);
+    like($started, qr#Chimp is working on.+ 107 - Refactor \(1/1\)#s);
 
-# Test using the simple example
-$started = `$^X -Mblib bin/hwd --started < t/simple.hwd`;
-like($started, qr#Ape is working on.+ 104 - Add .+\(2/2\)#s);
-like($started, qr#Chimp is working on.+ 107 - Refactor \(1/1\)#s);
-is(scalar(@lines = split "\n", $started), 5, "Correct number of lines (5)");
+    my @lines = split "\n", $started;
+    is(scalar @lines, 9, "Correct number of lines");
+}
 
-# Test for only one user
-$started = `$^X -Mblib bin/hwd --started Ape < t/simple.hwd`;
-like($started, qr#Ape is working on.+ 104 - Add .+\(2/2\)#s);
-unlink($started, qr#Chimp is working on.+ 107 - Refactor \(1/1\)#s);
-is(scalar(@lines = split "\n", $started), 2, "Correct number of lines (2)");
+ONE_USER: { # Test for only one user
+    my $started = `$^X -Mblib bin/hwd --started Ape < t/simple.hwd`;
+    like($started, qr#Ape is working on.+ 104 - Add .+\(2/2\)#s);
+    unlike($started, qr#Chimp is working on.+ 107 - Refactor \(1/1\)#s);
+
+    my @lines = split "\n", $started;
+    is( scalar @lines, 5, "Correct number of lines");
+}

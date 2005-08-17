@@ -49,7 +49,7 @@ sub parse {
                 s/\s+$//;
                 /^#(\d+)$/ and $id = $1, next;
                 /^(\d+)h$/ and $estimate = $1, next;
-                /^\@(\S+)$/ and $date_added = $1, next;
+                /^added (\S+)$/i and $date_added = $1, next;
                 warn "Don't understand $_";
             }
         }
