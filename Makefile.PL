@@ -18,7 +18,8 @@ WriteMakefile(
         'Test::More' => 0,
         'Getopt::Long' => 0,
         'Pod::Usage' => 0,
-        'Date::Manip' => 0,
+        'DateTime' => 0,
+        'DateTime::Format::Strptime' => 0,
     },
     MAN3PODS            => { }, # no need for docs on these
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },

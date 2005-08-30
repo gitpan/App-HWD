@@ -1,8 +1,5 @@
 package App::HWD::Work;
 
-use warnings;
-use strict;
-
 =head1 NAME
 
 App::HWD::Work - Work completed on HWD projects
@@ -13,6 +10,12 @@ Used only by the F<hwd> application.
 
 Note that these functions are pretty fragile, and do almost no data
 checking.
+
+=cut
+
+use warnings;
+use strict;
+use DateTime::Format::Strptime;
 
 =head1 FUNCTIONS
 
@@ -30,6 +33,8 @@ sub parse {
     die "Invalid work line: $line" unless @cols >= 4;
 
     my ($who, $when, $task, $hours, $comment) = @cols;
+    my $parser = DateTime::Format::Strptime->new( pattern => '%Y-%m-%d' );
+    $when = $parser->parse_datetime( $when );
     my $completed;
     if ( defined $comment ) {
         if ( $comment =~ s/\s*X\s*//i ) {
@@ -91,7 +96,11 @@ Returns who did the work
 
 =head2 $work->when()
 
-Returns the when of the work
+Returns the when of the work as a string.
+
+=head2 $work->when_obj()
+
+Returns the when of the work as a DateTime object.
 
 =head2 $work->task()
 
@@ -112,25 +121,22 @@ Returns the comment from the file, if any.
 =cut
 
 sub who         { return shift->{who} }
-sub when        { return shift->{when} }
 sub task        { return shift->{task} }
 sub hours       { return shift->{hours} }
-sub completed   { return shift->{completed} }
+sub completed   { return shift->{completed} || 0 }
 sub comment     { return shift->{comment} }
+sub when_obj    { return shift->{when} }
+sub when {
+    my $self = shift;
+
+    my $obj = $self->{when} or return '';
+
+    return $obj->strftime( "%F" );
+}
 
 =head1 AUTHOR
 
 Andy Lester, C<< <andy at petdance.com> >>
-
-=head1 BUGS
-
-Please report any bugs or feature requests to
-C<bug-app-hwd-task@rt.cpan.org>, or through the web interface at
-L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=App-HWD>.
-I will be notified, and then you'll automatically be notified of progress on
-your bug as I make changes.
-
-=head1 ACKNOWLEDGEMENTS
 
 =head1 COPYRIGHT & LICENSE
 

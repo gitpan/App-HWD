@@ -1,8 +1,5 @@
 package App::HWD::Task;
 
-use warnings;
-use strict;
-
 =head1 NAME
 
 App::HWD::Task - Tasks for HWD
@@ -22,6 +19,10 @@ Returns an App::HWD::Task object from an input line
 
 =cut
 
+use warnings;
+use strict;
+use DateTime::Format::Strptime;
+
 sub parse {
     my $class = shift;
     my $line = shift;
@@ -39,27 +40,34 @@ sub parse {
         my $name = $2;
         my $id;
         my $estimate;
-        my $date_added;
+        my %date;
 
         if ( $name =~ s/\s*\(([^)]+)\)\s*$// ) {
             my $parens = $1;
+            my $parser = DateTime::Format::Strptime->new( pattern => '%Y-%m-%d' );
+
             my @subfields = split /,/, $parens;
             for ( @subfields ) {
                 s/^\s+//;
                 s/\s+$//;
                 /^#(\d+)$/ and $id = $1, next;
-                /^(\d+)h$/ and $estimate = $1, next;
-                /^added (\S+)$/i and $date_added = $1, next;
-                warn "Don't understand $_";
+                /^((\d*\.)?\d+)h$/  and $estimate = $1, next;
+                /^(added|deleted) (\S+)$/i and do {
+                    my ($type,$date) = ($1,$2);
+                    $date{$type} = $parser->parse_datetime($date);
+                    next if $date{$type};
+                };
+                warn qq{I don't understand "$_"\n};
             }
         }
 
         my $task = $class->new( {
-            level       => $level,
-            name        => $name,
-            id          => $id,
-            estimate    => $estimate,
-            date_added  => $date_added,
+            level               => $level,
+            name                => $name,
+            id                  => $id,
+            estimate            => $estimate,
+            date_added_obj      => $date{added},
+            date_deleted_obj    => $date{deleted},
         } );
     }
     else {
@@ -111,7 +119,19 @@ Returns the estimate, or 0 if it's not set.
 
 =head2 $task->date_added()
 
-Returns the date the task was added, or empty string if it's not set.
+Returns a string showing the date the task was added, or empty string if it's not set.
+
+=head2 $task->date_added_obj()
+
+Returns a DateTime object representing the date the task was added, or C<undef> if it's not set.
+
+=head2 $task->date_deleted()
+
+Returns a string showing the date the task was deleted, or empty string if it's not set.
+
+=head2 $task->date_deleted_obj()
+
+Returns a DateTime object representing the date the task was deleted, or C<undef> if it's not set.
 
 =head2 $task->work()
 
@@ -119,12 +139,43 @@ Returns the array of App::HWD::Work applied to the task.
 
 =cut
 
-sub level       { return shift->{level} }
-sub name        { return shift->{name} }
-sub id          { return shift->{id} || "" }
-sub estimate    { return shift->{estimate} || 0 }
-sub date_added  { return shift->{date_added} || '' }
-sub work { return @{shift->{work}} }
+sub level               { return shift->{level} }
+sub name                { return shift->{name} }
+sub id                  { return shift->{id} || "" }
+sub estimate            { return shift->{estimate} || 0 }
+sub work                { return @{shift->{work}} }
+sub date_added_obj      { return shift->{date_added_obj} }
+sub date_deleted_obj    { return shift->{date_added_obj} }
+
+sub date_added {
+    my $self = shift;
+    my $obj = $self->{date_added_obj} or return '';
+
+    return $obj->strftime( "%F" );
+}
+
+sub date_deleted {
+    my $self = shift;
+    my $obj = $self->{date_deleted_obj} or return '';
+
+    return $obj->strftime( "%F" );
+}
+
+=head2 $task->is_todo()
+
+Returns true if the task still has things to be done on it.  If the task
+has no estimates, because it's a roll-up or milestone task, this is false.
+
+=cut
+
+sub is_todo {
+    my $self = shift;
+
+    return 0 if !$self->estimate;
+
+    return 0 if $self->completed;
+    return 1;
+}
 
 =head2 $task->set( $key => $value )
 
@@ -170,6 +221,20 @@ sub hours_worked {
     return $hours;
 }
 
+=head2 started()
+
+Returns whether the task has been started.  Doesn't address the question
+of whether the task is completed or not, just whether work has been done
+on it.
+
+=cut
+
+sub started {
+    my $self = shift;
+
+    return @{$self->{work}} > 0;
+}
+
 =head2 completed()
 
 Returns whether the task has been completed.
@@ -201,19 +266,29 @@ sub summary {
     return $sum;
 }
 
+=head2 sort_work
+
+Make sure all the work for a task is sorted so we can tell what was done when.
+
+=cut
+
+sub sort_work {
+    my $self = shift;
+
+    my $work = $self->{work};
+
+    @$work = sort {
+        $a->when cmp $b->when
+        ||
+        $a->completed cmp $b->completed
+        ||
+        $a->who cmp $b->who
+    } @$work;
+}
+
 =head1 AUTHOR
 
 Andy Lester, C<< <andy at petdance.com> >>
-
-=head1 BUGS
-
-Please report any bugs or feature requests to
-C<bug-app-hwd-task@rt.cpan.org>, or through the web interface at
-L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=App-HWD>.
-I will be notified, and then you'll automatically be notified of progress on
-your bug as I make changes.
-
-=head1 ACKNOWLEDGEMENTS
 
 =head1 COPYRIGHT & LICENSE
 

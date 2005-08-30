@@ -9,11 +9,11 @@ App::HWD - The great new App::HWD!
 
 =head1 VERSION
 
-Version 0.07_01
+Version 0.08
 
 =cut
 
-our $VERSION = '0.07_01';
+our $VERSION = '0.08';
 
 =head1 SYNOPSIS
 
@@ -23,7 +23,13 @@ This module is nothing more than a place-holder for the version info and the TOD
 
 =over 4
 
-=item * Show totals in --started
+=item * Add support for HWDFILE environment variable so those of us who are only ever using one file don't have to keep retyping the name all the time.
+
+=item * Add support for deleting tasks
+
+=item * Add support for changing estimates on a task
+
+=item * Open tasks are doubling up if two people have it open.
 
 =item * Show task history
 

@@ -7,7 +7,7 @@ my $hwd = 't/simple.hwd';
 
 NEXTID_OPTION: {
     my $run = "$cmd --nextid $hwd";
-    diag "Running: $run";
+    # diag "Running: $run";
     my $output = `$run`;
     chomp $output;
     is($output, "Next task ID: 108", "--nextid option");
@@ -15,7 +15,7 @@ NEXTID_OPTION: {
 
 TASKS_OPTION: {
     my $run = "$cmd --tasks $hwd";
-    diag "Running: $run";
+    # diag "Running: $run";
     my @output = `$run`;
     chomp @output;
     like(shift @output, qr(^Ape), "Ape's tasks");
@@ -36,7 +36,7 @@ TASKS_OPTION: {
 
 USER_TASKS_OPTION: {
     my $run = "$cmd --tasks Chimp $hwd";
-    diag "Running: $run";
+    # diag "Running: $run";
     my @output = `$run`;
     chomp @output;
     like(shift @output, qr(^Chimp), "Chimp's tasks");

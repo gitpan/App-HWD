@@ -1,6 +1,24 @@
 Revision history for App-HWD
 
-NEXT    
+0.08    Tue Aug 30 16:43:54 CDT 2005
+        [THINGS THAT MIGHT BREAK YOUR CODE]
+        * Dates must now be in YYYY-MM-DD format.
+
+        [ENHANCEMENTS]
+        * Added --todo option to show only those items needing to be done.
+        * Now handles fractional estimates.
+        * Now handles deletion dates.  We don't DO anything with them,
+          but they're legal, and burndown ignores them.
+        * Franctional estimates and velocities in the main listing now
+          show as "+" rather than the decimals.  For example, "12"
+          shows as "12", but "12.5" shows as "12+".
+
+        [FIXES]
+        * No longer double-counts tasks worked on by multiple people
+          in --started.
+        * Doesn't print a total when a --started person is specified.
+
+0.07_01 Wed Aug 17 15:03:12 CDT 2005
         [THINGS THAT MIGHT BREAK YOUR CODE]
         * Previously, a task that was added after coding started was
           noted like this:

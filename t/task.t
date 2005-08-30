@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 50;
+use Test::More tests => 90;
 
 BEGIN {
     use_ok( 'App::HWD::Task' );
@@ -21,6 +21,9 @@ SIMPLE: {
     is( $task->id, '' );
     is( $task->date_added, '' );
     is( $task->summary, 'Create TW::DB::QuoteHead (0/0)', 'Summary');
+    ok( !$task->completed, 'Not completed' );
+    ok( !$task->started, 'Not started' );
+    ok( !$task->is_todo );
 }
 
 WITH_ID: {
@@ -34,6 +37,9 @@ WITH_ID: {
     is( $task->id, 198 );
     is( $task->date_added, '' );
     is( $task->summary, '198 - API Pod Docs (0/0)', 'Summary');
+    ok( !$task->completed, 'Not completed' );
+    ok( !$task->started, 'Not started' );
+    ok( !$task->is_todo );
 }
 
 WITH_ESTIMATE: {
@@ -47,6 +53,9 @@ WITH_ESTIMATE: {
     is( $task->id, '' );
     is( $task->date_added, '' );
     is( $task->summary, 'API Pod Docs (4/0)', 'Summary');
+    ok( !$task->completed, 'Not completed' );
+    ok( !$task->started, 'Not started' );
+    ok(  $task->is_todo );
 }
 
 WITH_ID_AND_ESTIMATE: {
@@ -60,6 +69,9 @@ WITH_ID_AND_ESTIMATE: {
     is( $task->id, 142 );
     is( $task->date_added, '' );
     is( $task->summary, '142 - Retrofitting widgets (3/0)', 'Summary');
+    ok( !$task->completed, 'Not completed' );
+    ok( !$task->started, 'Not started' );
+    ok(  $task->is_todo );
 }
 
 WITH_ESTIMATE_AND_ID: {
@@ -73,6 +85,9 @@ WITH_ESTIMATE_AND_ID: {
     is( $task->id, 2112 );
     is( $task->date_added, '' );
     is( $task->summary, '2112 - Flargling dangows (9/0)', 'Summary');
+    ok( !$task->completed, 'Not completed' );
+    ok( !$task->started, 'Not started' );
+    ok(  $task->is_todo );
 }
 
 WITH_PARENS: {
@@ -85,16 +100,51 @@ WITH_PARENS: {
     is( $task->id, 43 );
     is( $task->date_added, '' );
     is( $task->summary, '43 - Voodoo Chile (Slight Return) (0/0)', 'Summary');
+    ok( !$task->completed, 'Not completed' );
+    ok( !$task->started, 'Not started' );
+    ok( !$task->is_todo );
 }
 
 WITH_ID_AND_ESTIMATE_AND_DATE: {
-    my $str = '----Retrofitting widgets (#142, 3h, added 12/7)';
+    my $str = '----Retrofitting widgets (#142, 3h, added 2005-12-07)';
     my $task = App::HWD::Task->parse( $str );
     isa_ok( $task, 'App::HWD::Task' );
     is( $task->name, 'Retrofitting widgets' );
     is( $task->level, 4 );
     is( $task->estimate, 3 );
     is( $task->id, 142 );
-    is( $task->date_added, '12/7', 'Task date' );
+    isa_ok( $task->date_added_obj, 'DateTime', 'Task date object' );
+    is( $task->date_added, '2005-12-07', 'Task date string' );
     is( $task->summary, '142 - Retrofitting widgets (3/0)', 'Summary' );
+    ok( !$task->completed, 'Not completed' );
+    ok( !$task->started, 'Not started' );
+    ok(  $task->is_todo );
+}
+
+WITH_FRACTIONAL_ESTIMATE: {
+    my $str = '----Retrofitting widgets (.25h)';
+    my $task = App::HWD::Task->parse( $str );
+    isa_ok( $task, 'App::HWD::Task' );
+    is( $task->name, 'Retrofitting widgets' );
+    is( $task->level, 4 );
+    cmp_ok( $task->estimate, '==', 0.25 );
+    is( $task->id, '' );
+    ok( !$task->completed, 'Not completed' );
+    ok( !$task->started, 'Not started' );
+    ok(  $task->is_todo );
+}
+
+WITH_DELETION: {
+    my $str = '-Unnecessary task (14.5h, added 2005-11-07, deleted 2005-08-28, #2112)';
+    my $task = App::HWD::Task->parse( $str );
+    isa_ok( $task, 'App::HWD::Task' );
+    is( $task->name, 'Unnecessary task' );
+    is( $task->level, 1 );
+    cmp_ok( $task->estimate, '==', 14.5 );
+    is( $task->id, 2112 );
+    is( $task->date_added, '2005-11-07', "Add date" );
+    is( $task->date_deleted, '2005-08-28', "Delete date" );
+    ok( !$task->completed, 'Not completed' );
+    ok( !$task->started, 'Not started' );
+    ok(  $task->is_todo );
 }

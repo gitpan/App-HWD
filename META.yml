@@ -1,11 +1,12 @@
 # http://module-build.sourceforge.net/META-spec.html
 #XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
 name:         App-HWD
-version:      0.07_01
+version:      0.08
 version_from: HWD.pm
 installdirs:  site
 requires:
-    Date::Manip:                   0
+    DateTime:                      0
+    DateTime::Format::Strptime:    0
     Getopt::Long:                  0
     Pod::Usage:                    0
     Test::More:                    0
