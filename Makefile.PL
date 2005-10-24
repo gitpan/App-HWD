@@ -20,6 +20,8 @@ WriteMakefile(
         'Pod::Usage' => 0,
         'DateTime' => 0,
         'DateTime::Format::Strptime' => 0,
+        'Text::CSV_XS' => 0,
+        'Test::Exception' => 0,
     },
     MAN3PODS            => { }, # no need for docs on these
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },

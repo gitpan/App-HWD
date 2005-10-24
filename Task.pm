@@ -13,7 +13,7 @@ checking.
 
 =head1 FUNCTIONS
 
-=head2 App::HWD::Task->parse()
+=head2 App::HWD::Task->parse( $input_line, $parent_task )
 
 Returns an App::HWD::Task object from an input line
 
@@ -26,6 +26,7 @@ use DateTime::Format::Strptime;
 sub parse {
     my $class = shift;
     my $line = shift;
+    my $parent = shift;
 
     my $line_regex = qr/
         ^
@@ -68,6 +69,7 @@ sub parse {
             estimate            => $estimate,
             date_added_obj      => $date{added},
             date_deleted_obj    => $date{deleted},
+            parent              => $parent,
         } );
     }
     else {
@@ -117,6 +119,10 @@ Returns the ID of the task, or the empty string if there isn't one.
 
 Returns the estimate, or 0 if it's not set.
 
+=head2 $task->notes()
+
+Returns the list of notes for the task.
+
 =head2 $task->date_added()
 
 Returns a string showing the date the task was added, or empty string if it's not set.
@@ -133,6 +139,14 @@ Returns a string showing the date the task was deleted, or empty string if it's 
 
 Returns a DateTime object representing the date the task was deleted, or C<undef> if it's not set.
 
+=head2 $task->parent()
+
+Returns the parent of the task, or C<undef> if it's a top-level task.
+
+=head2 $task->children()
+
+Returns a list of child tasks.
+
 =head2 $task->work()
 
 Returns the array of App::HWD::Work applied to the task.
@@ -143,9 +157,12 @@ sub level               { return shift->{level} }
 sub name                { return shift->{name} }
 sub id                  { return shift->{id} || "" }
 sub estimate            { return shift->{estimate} || 0 }
-sub work                { return @{shift->{work}} }
+sub work                { return @{shift->{work}||[]} }
+sub notes               { return @{shift->{notes}||[]} }
 sub date_added_obj      { return shift->{date_added_obj} }
 sub date_deleted_obj    { return shift->{date_added_obj} }
+sub parent              { return shift->{parent} }
+sub children            { return @{shift->{children}||[]} }
 
 sub date_added {
     my $self = shift;
@@ -171,10 +188,15 @@ has no estimates, because it's a roll-up or milestone task, this is false.
 sub is_todo {
     my $self = shift;
 
-    return 0 if !$self->estimate;
+    if ( $self->estimate ) {
+        return if $self->date_deleted;
+        return !$self->completed;
+    }
 
-    return 0 if $self->completed;
-    return 1;
+    for my $child ( $self->children ) {
+        return 1 if $child->is_todo;
+    }
+    return;
 }
 
 =head2 $task->set( $key => $value )
@@ -190,6 +212,31 @@ sub set {
 
     die "Dupe key $key" if exists $self->{$key};
     $self->{$key} = $value;
+}
+
+=head2 add_notes( @notes_lines )
+
+Adds the lines passed in to the notes lines for the task.
+
+=cut
+
+sub add_notes {
+    my $self = shift;
+
+    push( @{$self->{notes}}, @_ );
+}
+
+=head2 add_child( $task )
+
+Adds a child Task record to the task
+
+=cut
+
+sub add_child {
+    my $self = shift;
+    my $child = shift;
+
+    push( @{$self->{children}}, $child );
 }
 
 =head2 add_work( $work )

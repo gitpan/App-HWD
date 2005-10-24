@@ -17,5 +17,8 @@ t/pod.t
 t/simple.hwd
 t/started.t
 t/task.t
+t/task-relationships.t
+t/task-structure-error.t
+t/task-subtasks.t
 t/work.t
 META.yml                                 Module meta-data (added by MakeMaker)

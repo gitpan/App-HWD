@@ -4,9 +4,9 @@ use strict;
 use warnings;
 use Getopt::Long;
 use Pod::Usage;
-use App::HWD::Task;
-use App::HWD::Work;
+use App::HWD;
 use Date::Manip;
+use Text::CSV_XS;
 
 MAIN: {
     my $show_nextid;
@@ -14,6 +14,8 @@ MAIN: {
     my $show_tasks;
     my $show_burndown;
     my $show_todo;
+    my $csv;
+    my $wrap = 72;
 
     Getopt::Long::Configure( "no_ignore_case" );
     Getopt::Long::Configure( "bundling" );
@@ -23,14 +25,16 @@ MAIN: {
         'started:s'     => \$show_started,
         'tasks:s'       => \$show_tasks,
         'burndown'      => \$show_burndown,
+        'wrap:i'        => \$wrap,
+        'csv!'          => \$csv,
         'h|help|?'      => sub { pod2usage({-verbose => 1}); exit; },
         'H|man'         => sub { pod2usage({-verbose => 2}); exit; },
         'V|version'     => sub { print_version(); exit; },
     ) or exit 1;
-#die "Must specify input files\n" unless @ARGV;
+    #die "Must specify input files\n" unless @ARGV;
 
-# XXX the --started and --tasks options with no argument eats the filename.
-# Attempt to compensate.
+    # XXX the --started and --tasks options with no argument eats the filename.
+    # Attempt to compensate.
     for my $var ($show_started, $show_tasks) {
         if ($var and -e $var) {
             unshift @ARGV, $var;
@@ -38,7 +42,7 @@ MAIN: {
         }
     }
 
-    my ($tasks,$works,$tasks_by_id) = get_tasks_and_work();
+    my ($tasks,$works,$tasks_by_id) = App::HWD::get_tasks_and_work( <> );
 
     if ( $show_nextid ) {
         my $max = (sort {$a <=> $b} keys %$tasks_by_id )[-1];
@@ -48,6 +52,13 @@ MAIN: {
     }
 
     my $show_full_dump = 1;
+    my $filter = undef;
+
+    if ( $csv ) {
+        show_full_dump( $tasks, $filter, $wrap, $csv );
+        $show_full_dump = 0;
+    }
+
     if ( defined $show_tasks ) {
         show_tasks( $show_tasks, $tasks, $works, $tasks_by_id );
         $show_full_dump = 0;
@@ -64,17 +75,18 @@ MAIN: {
     }
 
     if ( $show_todo ) {
-        my $filter = sub {
+        $filter = sub {
             my $task = shift;
-            return 1 if $task->is_todo;
-            return;
+            return $task->is_todo;
         };
-        show_full_dump( $tasks, $filter );
+        show_full_dump( $tasks, $filter, $wrap, $csv );
         $show_full_dump = 0;
     }
 
     if ( $show_full_dump ) {
-        show_full_dump( $tasks );
+        show_full_dump( $tasks, $filter, $wrap, $csv );
+        print "\n";
+        show_totals( $tasks );
     }
 }
 
@@ -82,49 +94,97 @@ MAIN: {
 sub show_full_dump {
     my $tasks = shift;
     my $filter = shift;
+    my $wrap = shift;
+    my $csv = shift;
 
     my @fields = qw( estimated velocity started unstarted deleted );
 
     my %total;
     $total{$_} = 0 for @fields;
+
     for my $task ( @$tasks ) {
         my $points = $task->estimate || 0;
         if ( $task->date_deleted ) {
             $total{deleted} += $points;
         }
         else {
-            $total{estimated}   += $points;
-            $total{velocity}    += $points if $task->completed;
-            $total{started}     += $points if $task->started && !$task->completed;
-            $total{unstarted}   += $points if !$task->started;
+            if ( $points ) {
+                $total{estimated}   += $points;
+                $total{velocity}    += $points if $task->completed;
+                $total{started}     += $points if $task->started && !$task->completed;
+                $total{unstarted}   += $points if !$task->started;
+            }
             if ( !$filter || $filter->( $task ) ) {
-                print_task( $task );
+                print_task( $task, $wrap, $csv );
             }
         }
     }
-    for my $type ( @fields ) {
-        print "Total $type: $total{$type}\n";
+
+    if ( !$csv ) {
+        print "\n";
+        for my $type ( @fields ) {
+            printf "%6.2f %s\n", $total{$type}, $type;
+        }
     }
 }
 
 sub print_task {
     my $task = shift;
+    my $wrap = shift;
+    my $csv = shift;
 
     my $level = $task->level;
     my $name = $task->name;
     my $id = $task->id;
-    my $indent = " " x (($level-1)*4);
 
-    if ( $id ) {
-        my $worked = fractiony( $task->hours_worked );
-        my $estimate = fractiony( $task->estimate );
+    if ( $id || $task->estimate ) {
+        my $worked = $task->hours_worked;
+        my $estimate = $task->estimate;
+
+        unless ( $csv ) {
+            $worked = fractiony( $worked );
+            $estimate = fractiony( $estimate );
+        }
         my $x = $task->completed ? "X" : " ";
-        print_cols( $id, $estimate, $worked, $x, $indent, $name );
+        print_cols( $wrap, $csv, $level, $id, $estimate, $worked, $x, $name );
     }
     else {
-        print_cols( ("") x 4, $indent, $name );
+        print_cols( $wrap, $csv, $level, ("") x 4, $name );
     }
 }
+
+sub print_cols {
+    my $wrap = shift;
+    my $csv = shift;
+    my $level = shift;
+    my @cols = @_;
+
+    for ( @cols[0..0] ) {
+        $_ = $_ ? sprintf( "%4d", $_ ) : "";
+    }
+    for ( @cols[2..5] ) {
+        $_ = "" unless defined $_;
+    }
+
+    if ( $csv ) {
+        my $csv = Text::CSV_XS->new;
+        s/^\s+// for @cols;
+        s/\s+$// for @cols;
+        $csv->combine( @cols ) or die "Can't create a CSV string!";
+        print join( ",", $csv->string ), "\n";
+    }
+    else {
+        my $indent = " " x (($level-1)*4);
+
+        my $str = sprintf( "%4s %6.6s %6.6s %1s %s %s", @cols[0..3], $indent, $cols[4] );
+
+        if ( $wrap ) {
+        }
+
+        print $str, "\n";
+    }
+}
+
 
 sub fractiony {
     my $n = shift;
@@ -245,61 +305,28 @@ sub show_burndown {
     }
 }
 
-# Reads tasks and work, and applies the work to the tasks.
-sub get_tasks_and_work {
-    my @tasks;
-    my @work;
-    my %tasks_by_id;
+sub show_totals {
+    my ( $tasks, $works, $tasks_by_id ) = @_;
 
-    while ( my $line = <> ) {
-        chomp $line;
-        next if $line =~ /^\s*#/;
-        next if $line !~ /./;
+    my @totals;
+    my $curr_total;
 
-        if ( $line =~ /^-/ ) {
-            my $task = App::HWD::Task->parse( $line );
-            die "Can't parse: $line\n" unless $task;
-            if ( $task->id ) {
-                if ( $tasks_by_id{ $task->id } ) {
-                    die "Dupe task ID ", $task->id, "\n";
-                }
-                else {
-                    $tasks_by_id{ $task->id } = $task;
-                }
-            }
-            push( @tasks, $task );
+    for my $task ( @$tasks ) {
+        if ( $task->level eq 1 ) {
+            push( @totals, $curr_total = [ 0, $task->name ] );
         }
-        else {
-            my $work = App::HWD::Work->parse( $line );
-            push( @work, $work );
+        if ( !$task->date_deleted ) {
+            $curr_total->[0] += $task->estimate;
         }
-    } # while
-
-    for my $work ( @work ) {
-        my $task = $tasks_by_id{ $work->task }
-            or die "No task ID ", $work->task, "\n";
-        $task->add_work( $work );
     }
 
-    $_->sort_work() for @tasks;
-
-    return( \@tasks, \@work, \%tasks_by_id );
+    for $curr_total ( @totals ) {
+        printf( "%4d %s\n", $curr_total->[0], $curr_total->[1] );
+    }
 }
 
 sub print_version {
     printf( "hwd v%s\n", $App::HWD::VERSION, $^V );
-}
-
-sub print_cols {
-    my @cols = @_;
-
-    for ( @cols[0..0] ) {
-        $_ = $_ ? sprintf( "%4d", $_ ) : "";
-    }
-    for ( @cols[2..5] ) {
-        $_ = "" unless defined $_;
-    }
-    printf( "%4s %6.6s %6.6s %1s %s %s\n", @cols );
 }
 
 __END__
@@ -323,6 +350,11 @@ Options:
         --tasks[=person]
                     Displays tasks for a given user
         --burndown  Display a burn-down table
+        --totals    Display top-level totals
+
+        --wrap=n    Wrap output at n columns, or 0 for no wrapping.
+                    Default is 72.
+        --csv       Output in CSV format
 
     -h, --help      Display this help
     -H, --man       Longer manpage for prove

@@ -1,5 +1,18 @@
 Revision history for App-HWD
 
+0.10    Mon Oct 24 17:38:00 CDT 2005
+        [ENHANCEMENTS]
+        * Added top-level totaling on the main dump.
+        * --todo now respects subtasks and their doneness.
+        * Added --csv option for printing dumps in an importable form
+        * Added --csv option for printing dumps in an importable form
+        * You can now have notes in a task.  Anything that is indented
+          is assumed to be part of the notes for the task above it.
+
+        [INTERNALS]
+        * Added parent()/children() to App::HWD::Task to support the
+          hierarchy reporting.
+
 0.08    Tue Aug 30 16:43:54 CDT 2005
         [THINGS THAT MIGHT BREAK YOUR CODE]
         * Dates must now be in YYYY-MM-DD format.

@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 90;
+use Test::More tests => 99;
 
 BEGIN {
     use_ok( 'App::HWD::Task' );
@@ -24,6 +24,7 @@ SIMPLE: {
     ok( !$task->completed, 'Not completed' );
     ok( !$task->started, 'Not started' );
     ok( !$task->is_todo );
+    ok( !$task->parent );
 }
 
 WITH_ID: {
@@ -40,6 +41,7 @@ WITH_ID: {
     ok( !$task->completed, 'Not completed' );
     ok( !$task->started, 'Not started' );
     ok( !$task->is_todo );
+    ok( !$task->parent );
 }
 
 WITH_ESTIMATE: {
@@ -56,6 +58,7 @@ WITH_ESTIMATE: {
     ok( !$task->completed, 'Not completed' );
     ok( !$task->started, 'Not started' );
     ok(  $task->is_todo );
+    ok( !$task->parent );
 }
 
 WITH_ID_AND_ESTIMATE: {
@@ -72,6 +75,7 @@ WITH_ID_AND_ESTIMATE: {
     ok( !$task->completed, 'Not completed' );
     ok( !$task->started, 'Not started' );
     ok(  $task->is_todo );
+    ok( !$task->parent );
 }
 
 WITH_ESTIMATE_AND_ID: {
@@ -88,6 +92,7 @@ WITH_ESTIMATE_AND_ID: {
     ok( !$task->completed, 'Not completed' );
     ok( !$task->started, 'Not started' );
     ok(  $task->is_todo );
+    ok( !$task->parent );
 }
 
 WITH_PARENS: {
@@ -103,6 +108,7 @@ WITH_PARENS: {
     ok( !$task->completed, 'Not completed' );
     ok( !$task->started, 'Not started' );
     ok( !$task->is_todo );
+    ok( !$task->parent );
 }
 
 WITH_ID_AND_ESTIMATE_AND_DATE: {
@@ -119,6 +125,7 @@ WITH_ID_AND_ESTIMATE_AND_DATE: {
     ok( !$task->completed, 'Not completed' );
     ok( !$task->started, 'Not started' );
     ok(  $task->is_todo );
+    ok( !$task->parent );
 }
 
 WITH_FRACTIONAL_ESTIMATE: {
@@ -132,6 +139,7 @@ WITH_FRACTIONAL_ESTIMATE: {
     ok( !$task->completed, 'Not completed' );
     ok( !$task->started, 'Not started' );
     ok(  $task->is_todo );
+    ok( !$task->parent );
 }
 
 WITH_DELETION: {
@@ -146,5 +154,6 @@ WITH_DELETION: {
     is( $task->date_deleted, '2005-08-28', "Delete date" );
     ok( !$task->completed, 'Not completed' );
     ok( !$task->started, 'Not started' );
-    ok(  $task->is_todo );
+    ok( !$task->is_todo );
+    ok( !$task->parent );
 }
