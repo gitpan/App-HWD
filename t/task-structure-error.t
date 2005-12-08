@@ -3,16 +3,15 @@
 use strict;
 use warnings;
 
-use Test::More tests => 2;
-use Test::Exception;
+use Test::More tests => 4;
 
 BEGIN {
     use_ok( 'App::HWD' );
 }
 
-throws_ok {
-    my ($tasks,$work,$tasks_by_id) = App::HWD::get_tasks_and_work( <DATA> );
-} qr/has no parent/i, "Throws a warning on incorrect hierarchy";
+my ($tasks,$work,$tasks_by_id,$errors) = App::HWD::get_tasks_and_work( <DATA> );
+is( @$errors, 2, "Two errors returned" );
+like( $_, qr/has no parent/, "Correct text" ) for @$errors;
 
 __DATA__
 -Phase A

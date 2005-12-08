@@ -7,6 +7,16 @@ use Pod::Usage;
 use App::HWD;
 use Date::Manip;
 use Text::CSV_XS;
+use Text::Wrap;
+
+our $wrap = 72;
+
+if ( -t STDOUT ) { # If we're not redirecting
+    eval "use Term::ReadKey";
+    if ( !$@ ) {
+        $wrap = (Term::ReadKey::GetTerminalSize(*STDOUT))[0];
+    }
+}
 
 MAIN: {
     my $show_nextid;
@@ -15,7 +25,7 @@ MAIN: {
     my $show_burndown;
     my $show_todo;
     my $csv;
-    my $wrap = 72;
+    my $notes = 1;
 
     Getopt::Long::Configure( "no_ignore_case" );
     Getopt::Long::Configure( "bundling" );
@@ -27,6 +37,7 @@ MAIN: {
         'burndown'      => \$show_burndown,
         'wrap:i'        => \$wrap,
         'csv!'          => \$csv,
+        'notes!'        => \$notes,
         'h|help|?'      => sub { pod2usage({-verbose => 1}); exit; },
         'H|man'         => sub { pod2usage({-verbose => 2}); exit; },
         'V|version'     => sub { print_version(); exit; },
@@ -42,7 +53,11 @@ MAIN: {
         }
     }
 
-    my ($tasks,$works,$tasks_by_id) = App::HWD::get_tasks_and_work( <> );
+    my ($tasks,$works,$tasks_by_id,$errors) = App::HWD::get_tasks_and_work( <> );
+    if ( @$errors ) {
+        print join( "\n", @$errors, "" );
+        die;
+    }
 
     if ( $show_nextid ) {
         my $max = (sort {$a <=> $b} keys %$tasks_by_id )[-1];
@@ -55,7 +70,7 @@ MAIN: {
     my $filter = undef;
 
     if ( $csv ) {
-        show_full_dump( $tasks, $filter, $wrap, $csv );
+        show_full_dump( $tasks, $filter, $wrap, $csv, $notes );
         $show_full_dump = 0;
     }
 
@@ -79,12 +94,12 @@ MAIN: {
             my $task = shift;
             return $task->is_todo;
         };
-        show_full_dump( $tasks, $filter, $wrap, $csv );
+        show_full_dump( $tasks, $filter, $wrap, $csv, $notes );
         $show_full_dump = 0;
     }
 
     if ( $show_full_dump ) {
-        show_full_dump( $tasks, $filter, $wrap, $csv );
+        show_full_dump( $tasks, $filter, $wrap, $csv, $notes );
         print "\n";
         show_totals( $tasks );
     }
@@ -96,6 +111,8 @@ sub show_full_dump {
     my $filter = shift;
     my $wrap = shift;
     my $csv = shift;
+    my $notes = shift;
+    my @notes = shift;
 
     my @fields = qw( estimated velocity started unstarted deleted );
 
@@ -115,7 +132,7 @@ sub show_full_dump {
                 $total{unstarted}   += $points if !$task->started;
             }
             if ( !$filter || $filter->( $task ) ) {
-                print_task( $task, $wrap, $csv );
+                print_task( $task, $wrap, $csv, $notes );
             }
         }
     }
@@ -132,10 +149,12 @@ sub print_task {
     my $task = shift;
     my $wrap = shift;
     my $csv = shift;
+    my $notes = shift;
 
     my $level = $task->level;
     my $name = $task->name;
     my $id = $task->id;
+    my @notes = $notes ? $task->notes : ();
 
     if ( $id || $task->estimate ) {
         my $worked = $task->hours_worked;
@@ -146,10 +165,10 @@ sub print_task {
             $estimate = fractiony( $estimate );
         }
         my $x = $task->completed ? "X" : " ";
-        print_cols( $wrap, $csv, $level, $id, $estimate, $worked, $x, $name );
+        print_cols( $wrap, $csv, $level, $id, $estimate, $worked, $x, $name, @notes );
     }
     else {
-        print_cols( $wrap, $csv, $level, ("") x 4, $name );
+        print_cols( $wrap, $csv, $level, ("") x 4, $name, @notes );
     }
 }
 
@@ -157,7 +176,8 @@ sub print_cols {
     my $wrap = shift;
     my $csv = shift;
     my $level = shift;
-    my @cols = @_;
+    my @cols = splice( @_, 0, 5 );
+    my @notes = @_;
 
     for ( @cols[0..0] ) {
         $_ = $_ ? sprintf( "%4d", $_ ) : "";
@@ -175,14 +195,24 @@ sub print_cols {
     }
     else {
         my $indent = " " x (($level-1)*4);
+        my $desc = $cols[4];
 
-        my $str = sprintf( "%4s %6.6s %6.6s %1s %s %s", @cols[0..3], $indent, $cols[4] );
-
+        my $leader1 = sprintf( "%4s %6.6s %6.6s %1s %s", @cols[0..3], $indent );
+        my $spacing = (" " x 21) . $indent;
         if ( $wrap ) {
-        }
 
-        print $str, "\n";
-    }
+            local $Text::Wrap::columns = $wrap;
+            print wrap( $leader1, $spacing, $desc ), "\n";
+
+            if ( @notes ) {
+                print wrap( "$spacing    * ", "$spacing      ", @notes ), "\n";
+            }
+        }
+        else {
+            print "$leader1$desc\n";
+            print "$spacing  * @notes\n";
+        }
+    } # not CSV
 }
 
 
@@ -350,11 +380,11 @@ Options:
         --tasks[=person]
                     Displays tasks for a given user
         --burndown  Display a burn-down table
-        --totals    Display top-level totals
 
         --wrap=n    Wrap output at n columns, or 0 for no wrapping.
-                    Default is 72.
+                    Default is 72, or terminal width if available.
         --csv       Output in CSV format
+        --nonotes   Omit the notes from the output
 
     -h, --help      Display this help
     -H, --man       Longer manpage for prove

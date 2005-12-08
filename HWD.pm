@@ -12,11 +12,11 @@ App::HWD - How We Doin', the task tracking tool
 
 =head1 VERSION
 
-Version 0.10
+Version 0.12
 
 =cut
 
-our $VERSION = '0.10';
+our $VERSION = '0.12';
 
 =head1 SYNOPSIS
 
@@ -65,7 +65,7 @@ test them.
 
 Reads tasks and work, and applies the work to the tasks.
 
-Returns references to C<@tasks>, C<@work> and C<%tasks_by_id>.
+Returns references to C<@tasks>, C<@work>, C<%tasks_by_id> and C<@errors>.
 
 =cut
 
@@ -73,6 +73,7 @@ sub get_tasks_and_work {
     my @tasks;
     my @work;
     my %tasks_by_id;
+    my @errors;
 
     my @parents;
     my $curr_task;
@@ -87,14 +88,21 @@ sub get_tasks_and_work {
             my $level = length $1;
             my $parent;
             if ( $level > 1 ) {
-                $parent = $parents[ $level - 1 ]
-                    or die "Line $lineno has no parent: $line\n";
+                $parent = $parents[ $level - 1 ];
+                if ( !$parent ) {
+                    push( @errors, "Line $lineno has no parent: $line" );
+                    next;
+                }
             }
             my $task = App::HWD::Task->parse( $line, $parent );
-            die "Can't parse line $lineno: $line\n" unless $task;
+            if ( !$task ) {
+                push( @errors, "Can't parse line $lineno: $line" );
+                next;
+            }
             if ( $task->id ) {
                 if ( $tasks_by_id{ $task->id } ) {
-                    die "Dupe task ID on line $lineno: Task ", $task->id, "\n";
+                    push( @errors, "Dupe task ID on line $lineno: Task " . $task->id );
+                    next;
                 }
                 $tasks_by_id{ $task->id } = $task;
             }
@@ -105,7 +113,7 @@ sub get_tasks_and_work {
             @parents = @parents[0..$level-1];   # Clear any sub-parents
             $parents[ $level ] = $task;         # Set the new one
         }
-        elsif ( $line =~ /^\s+/ ) {
+        elsif ( $line =~ s/^\s+// ) {
             $curr_task->add_notes( $line );
         }
         else {
@@ -114,15 +122,25 @@ sub get_tasks_and_work {
         }
     } # while
 
+    # Validate the structure
+    for my $task ( @tasks ) {
+        if ( $task->estimate && $task->children ) {
+            push( @errors, sprintf( "Task %d cannot have estimates, because it has children", $task->id ) );
+        }
+    }
+
     for my $work ( @work ) {
-        my $task = $tasks_by_id{ $work->task }
-            or die "No task ID ", $work->task, "\n";
+        my $task = $tasks_by_id{ $work->task };
+        if ( !$task ) {
+            push( @errors, "No task ID " . $work->task );
+            next;
+        }
         $task->add_work( $work );
     }
 
     $_->sort_work() for @tasks;
 
-    return( \@tasks, \@work, \%tasks_by_id );
+    return( \@tasks, \@work, \%tasks_by_id, \@errors );
 }
 
 =head1 AUTHOR

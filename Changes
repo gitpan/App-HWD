@@ -1,10 +1,24 @@
 Revision history for App-HWD
 
+0.12
+        [ENHANCEMENTS]
+        * Now word-wraps the output based on the terminal size, or
+          at 72 if output is being redirected.  This may be overridden
+          with --wrap.
+
+        * Now includes notes in the output.  Can be turned off with --nonotes.
+
+        [FIXES]
+        * Added checks to make sure that tasks with estimates do not have children.
+
+        [INTERNALS]
+        * get_tasks_and_work() now returns an error array, rather
+          than dying.
+
 0.10    Mon Oct 24 17:38:00 CDT 2005
         [ENHANCEMENTS]
         * Added top-level totaling on the main dump.
         * --todo now respects subtasks and their doneness.
-        * Added --csv option for printing dumps in an importable form
         * Added --csv option for printing dumps in an importable form
         * You can now have notes in a task.  Anything that is indented
           is assumed to be part of the notes for the task above it.

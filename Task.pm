@@ -333,6 +333,25 @@ sub sort_work {
     } @$work;
 }
 
+=head2 subtask_walk( $callback )
+
+Recursively walks the tree of subtasks for the task, calling C<$callback>
+for each subtask, like so:
+
+    $callback->( $subtask )
+
+=cut
+
+sub subtask_walk {
+    my $self = shift;
+    my $callback = shift;
+
+    for my $child ( $self->children ) {
+        $callback->( $child );
+        $child->subtask_walk( $callback );
+    }
+}
+
 =head1 AUTHOR
 
 Andy Lester, C<< <andy at petdance.com> >>

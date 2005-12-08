@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 9;
+use Test::More tests => 11;
 
 BEGIN {
     use_ok( 'App::HWD' );
@@ -32,6 +32,18 @@ ok(  $top->is_todo,                     'Top task has no todo' );
 
         my $last = $tasks->[5];
         ok( !$last->is_todo,            'Last task is closed' );
+
+TOTAL_ESTIMATE: {
+    my $estimate;
+    $top->subtask_walk( sub { $estimate += shift->estimate } );
+    is( $estimate, 148, "Total hours correct" );
+}
+
+UNDELETED_ESTIMATE: {
+    my $estimate;
+    $top->subtask_walk( sub { $estimate += $_[0]->estimate unless $_[0]->date_deleted } );
+    is( $estimate, 6, "Undeleted hours correct" );
+}
 
 __DATA__
 -Phase A

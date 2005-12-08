@@ -18,6 +18,7 @@ t/simple.hwd
 t/started.t
 t/task.t
 t/task-relationships.t
+t/task-rollup-error.t
 t/task-structure-error.t
 t/task-subtasks.t
 t/work.t
